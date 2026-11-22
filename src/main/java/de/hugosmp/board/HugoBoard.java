@@ -190,16 +190,22 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         Player victim = e.getEntity();
         Player killer = victim.getKiller();
 
-        double bounty = bounties.getOrDefault(victim.getUniqueId(), 0.0);
-        if (bounty > 0 && killer != null && !killer.equals(victim)) {
-            bounties.remove(victim.getUniqueId());
-            econ.depositPlayer(killer, bounty);
-            saveData();
+        if (killer != null && !killer.equals(victim)) {
+            double killReward = 25000.0;
+            econ.depositPlayer(killer, killReward);
+            killer.sendMessage(mm.deserialize("<green>+ " + formatMoney(killReward) + " <gray>(Spieler-Kill)"));
 
-            Bukkit.broadcast(mm.deserialize(
-                "<red><bold>[BOUNTY]</bold> <gold>" + killer.getName() + " <white>hat <red>" + victim.getName() +
-                " <white>getoetet und <green>" + formatMoney(bounty) + " <white>Kopfgeld kassiert!"
-            ));
+            double bounty = bounties.getOrDefault(victim.getUniqueId(), 0.0);
+            if (bounty > 0) {
+                bounties.remove(victim.getUniqueId());
+                econ.depositPlayer(killer, bounty);
+                saveData();
+
+                Bukkit.broadcast(mm.deserialize(
+                    "<red><bold>[BOUNTY]</bold> <gold>" + killer.getName() + " <white>hat <red>" + victim.getName() +
+                    " <white>getoetet und <green>" + formatMoney(bounty) + " <white>Kopfgeld kassiert!"
+                ));
+            }
         }
         updateBoard(victim);
         if (killer != null) updateBoard(killer);
