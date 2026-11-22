@@ -1,4 +1,4 @@
-package de.shadowsmps.board;
+package de.hugosmp.board;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class ShadowBoard extends JavaPlugin implements CommandExecutor, Listener {
+public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
     private Economy econ;
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final Map<UUID, Double> bounties = new HashMap<>();
@@ -94,7 +94,7 @@ public class ShadowBoard extends JavaPlugin implements CommandExecutor, Listener
             if (args.get(0).equalsIgnoreCase("off")) {
                 boardDisabled.add(p.getUniqueId());
                 Scoreboard sb = p.getScoreboard();
-                Objective obj = sb.getObjective("shadowboard");
+                Objective obj = sb.getObjective("hugoboard");
                 if (obj != null) obj.unregister();
                 saveData();
                 p.sendMessage(mm.deserialize("<light_purple>Scoreboard wurde <red>ausgeschaltet<light_purple>."));
@@ -236,14 +236,14 @@ public class ShadowBoard extends JavaPlugin implements CommandExecutor, Listener
         }
 
         if (boardDisabled.contains(p.getUniqueId())) {
-            Objective old = sb.getObjective("shadowboard");
+            Objective old = sb.getObjective("hugoboard");
             if (old != null) old.unregister();
             return;
         }
 
-        Objective obj = sb.getObjective("shadowboard");
+        Objective obj = sb.getObjective("hugoboard");
         if (obj == null) {
-            obj = sb.registerNewObjective("shadowboard", Criteria.DUMMY, mm.deserialize("<gradient:#9d4edd:#e0aaff><bold>SHADOW SMP</bold></gradient>"));
+            obj = sb.registerNewObjective("hugoboard", Criteria.DUMMY, mm.deserialize("<gradient:#9d4edd:#e0aaff><bold>SHADOW SMP</bold></gradient>"));
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
         }
 
