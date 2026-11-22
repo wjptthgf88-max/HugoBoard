@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final Map<UUID, Double> bounties = new HashMap<>();
     private final Set<UUID> boardDisabled = new HashSet<>();
+    private final Map<String, Long> killCooldowns = new HashMap<>();
     private File dataFile;
 
     @Override
@@ -81,22 +83,23 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] rawArgs) {
         if (!(sender instanceof Player p)) return true;
+        List<String> args = Arrays.asList(rawArgs);
 
         if (cmd.getName().equalsIgnoreCase("board")) {
-            if (args.length == 0) {
+            if (args.isEmpty()) {
                 p.sendMessage(mm.deserialize("<red>Nutze: /board <on|off>"));
                 return true;
             }
-            if (args.equalsIgnoreCase("off")) {
+            if (args.get(0).equalsIgnoreCase("off")) {
                 boardDisabled.add(p.getUniqueId());
                 Scoreboard sb = p.getScoreboard();
                 Objective obj = sb.getObjective("hugoboard");
                 if (obj != null) obj.unregister();
                 saveData();
                 p.sendMessage(mm.deserialize("<yellow>Scoreboard wurde <red>ausgeschaltet<yellow>."));
-            } else if (args.equalsIgnoreCase("on")) {
+            } else if (args.get(0).equalsIgnoreCase("on")) {
                 boardDisabled.remove(p.getUniqueId());
                 saveData();
                 updateBoard(p);
@@ -108,18 +111,18 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         }
 
         if (cmd.getName().equalsIgnoreCase("bounty")) {
-            if (args.length == 0) {
+            if (args.isEmpty()) {
                 p.sendMessage(mm.deserialize("<red>Nutze: /bounty <set <Spieler> <Betrag> | check <Spieler> | top>"));
                 return true;
             }
 
-            switch (args.toLowerCase()) {
+            switch (args.get(0).toLowerCase()) {
                 case "set" -> {
-                    if (args.length < 3) {
+                    if (args.size() < 3) {
                         p.sendMessage(mm.deserialize("<red>Nutze: /bounty set <Spieler> <Betrag>"));
                         return true;
                     }
-                    Player target = Bukkit.getPlayer(args);
+                    Player target = Bukkit.getPlayer(args.get(1));
                     if (target == null) {
                         p.sendMessage(mm.deserialize("<red>Dieser Spieler ist nicht online!"));
                         return true;
@@ -130,13 +133,13 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                     }
                     double amount;
                     try {
-                        amount = Double.parseDouble(args);
+                        amount = Double.parseDouble(args.get(2));
                     } catch (NumberFormatException ex) {
                         p.sendMessage(mm.deserialize("<red>Bitte gib eine gueltige Zahl ein!"));
                         return true;
                     }
-                    if (amount < 100) {
-                        p.sendMessage(mm.deserialize("<red>Das Mindest-Kopfgeld betraegt 100 $!"));
+                    if (amount < 1000) {
+                        p.sendMessage(mm.deserialize("<red>Das Mindest-Kopfgeld betraegt 1.000 $!"));
                         return true;
                     }
                     if (!econ.has(p, amount)) {
@@ -156,13 +159,13 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                     ));
                 }
                 case "check" -> {
-                    if (args.length < 2) {
+                    if (args.size() < 2) {
                         p.sendMessage(mm.deserialize("<red>Nutze: /bounty check <Spieler>"));
                         return true;
                     }
-                    OfflinePlayer target = Bukkit.getOfflinePlayer(args);
+                    OfflinePlayer target = Bukkit.getOfflinePlayer(args.get(1));
                     double b = bounties.getOrDefault(target.getUniqueId(), 0.0);
-                    p.sendMessage(mm.deserialize("<aqua>[Bounty] <white>Kopfgeld auf <gold>" + args + "<white>: <green>" + formatMoney(b)));
+                    p.sendMessage(mm.deserialize("<aqua>[Bounty] <white>Kopfgeld auf <gold>" + args.get(1) + "<white>: <green>" + formatMoney(b)));
                 }
                 case "top" -> {
                     List<Map.Entry<UUID, Double>> sorted = new ArrayList<>(bounties.entrySet());
@@ -191,9 +194,18 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         Player killer = victim.getKiller();
 
         if (killer != null && !killer.equals(victim)) {
-            double killReward = 25000.0;
-            econ.depositPlayer(killer, killReward);
-            killer.sendMessage(mm.deserialize("<green>+ " + formatMoney(killReward) + " <gray>(Spieler-Kill)"));
+            String pairKey = killer.getUniqueId() + ":" + victim.getUniqueId();
+            long now = System.currentTimeMillis();
+            long lastKill = killCooldowns.getOrDefault(pairKey, 0L);
+
+            if (now - lastKill >= 10 * 60 * 1000L) {
+                killCooldowns.put(pairKey, now);
+                double killReward = 25_000.0;
+                econ.depositPlayer(killer, killReward);
+                killer.sendMessage(mm.deserialize("<green>+ " + formatMoney(killReward) + " <gray>(Spieler-Kill)"));
+            } else {
+                killer.sendMessage(mm.deserialize("<gray>(Kein Kill-Geld: Anti-Farm-Sperre fuer 10 Minuten aktiv)"));
+            }
 
             double bounty = bounties.getOrDefault(victim.getUniqueId(), 0.0);
             if (bounty > 0) {
