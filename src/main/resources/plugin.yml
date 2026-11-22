@@ -1,0 +1,14 @@
+name: HugoBoard
+version: 1.0
+main: de.hugosmp.board.HugoBoard
+api-version: '1.21'
+softdepend: [Vault, HugoClans]
+commands:
+  board:
+    description: Schaltet das Seiten-Scoreboard an oder aus
+    aliases: [sb, scoreboard]
+    usage: /board <on|off>
+  bounty:
+    description: Setze oder pruefe Kopfgelder auf Spieler
+    aliases: [kopfgeld]
+    usage: /bounty <set|check|top>
