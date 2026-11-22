@@ -1,6 +1,6 @@
 name: ShadowBoard
 version: 1.0
-main: de.shadowsmps.board.ShadowBoard
+main: de.hugosmp.board.HugoBoard
 api-version: '1.21'
 softdepend: [Vault, HugoClans]
 commands:
