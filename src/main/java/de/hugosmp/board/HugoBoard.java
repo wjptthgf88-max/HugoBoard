@@ -1,4 +1,4 @@
-package de.hugosmp.board;
+package de.shadowsmps.board;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
+public class ShadowBoard extends JavaPlugin implements CommandExecutor, Listener {
     private Economy econ;
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final Map<UUID, Double> bounties = new HashMap<>();
@@ -81,7 +81,6 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         if (amount >= 1_000.0) return new DecimalFormat("#.##").format(amount / 1_000.0) + "K $";
         return new DecimalFormat("#.##").format(amount) + " $";
     }
-
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] rawArgs) {
         if (!(sender instanceof Player p)) return true;
@@ -95,15 +94,15 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
             if (args.get(0).equalsIgnoreCase("off")) {
                 boardDisabled.add(p.getUniqueId());
                 Scoreboard sb = p.getScoreboard();
-                Objective obj = sb.getObjective("hugoboard");
+                Objective obj = sb.getObjective("shadowboard");
                 if (obj != null) obj.unregister();
                 saveData();
-                p.sendMessage(mm.deserialize("<yellow>Scoreboard wurde <red>ausgeschaltet<yellow>."));
+                p.sendMessage(mm.deserialize("<light_purple>Scoreboard wurde <red>ausgeschaltet<light_purple>."));
             } else if (args.get(0).equalsIgnoreCase("on")) {
                 boardDisabled.remove(p.getUniqueId());
                 saveData();
                 updateBoard(p);
-                p.sendMessage(mm.deserialize("<yellow>Scoreboard wurde <green>angeschaltet<yellow>."));
+                p.sendMessage(mm.deserialize("<light_purple>Scoreboard wurde <green>angeschaltet<light_purple>."));
             } else {
                 p.sendMessage(mm.deserialize("<red>Nutze: /board <on|off>"));
             }
@@ -143,7 +142,7 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                         return true;
                     }
                     if (!econ.has(p, amount)) {
-                        p.sendMessage(mm.deserialize("<red>Du hast nicht genug Geld (<gold>" + formatMoney(amount) + "<red>)!"));
+                        p.sendMessage(mm.deserialize("<red>Du hast nicht genug Geld (<light_purple>" + formatMoney(amount) + "<red>)!"));
                         return true;
                     }
 
@@ -154,8 +153,8 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                     updateBoard(target);
 
                     Bukkit.broadcast(mm.deserialize(
-                        "<red><bold>[BOUNTY]</bold> <gold>" + p.getName() + " <white>hat <gold>" + formatMoney(amount) +
-                        " <white>Kopfgeld auf <red>" + target.getName() + " <white>ausgesetzt! <gray>(Gesamt: <gold>" + formatMoney(newBounty) + "<gray>)"
+                        "<dark_purple><bold>[BOUNTY]</bold> <light_purple>" + p.getName() + " <white>hat <light_purple>" + formatMoney(amount) +
+                        " <white>Kopfgeld auf <red>" + target.getName() + " <white>ausgesetzt! <gray>(Gesamt: <light_purple>" + formatMoney(newBounty) + "<gray>)"
                     ));
                 }
                 case "check" -> {
@@ -165,7 +164,7 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                     }
                     OfflinePlayer target = Bukkit.getOfflinePlayer(args.get(1));
                     double b = bounties.getOrDefault(target.getUniqueId(), 0.0);
-                    p.sendMessage(mm.deserialize("<aqua>[Bounty] <white>Kopfgeld auf <gold>" + args.get(1) + "<white>: <green>" + formatMoney(b)));
+                    p.sendMessage(mm.deserialize("<dark_purple>[Bounty] <white>Kopfgeld auf <light_purple>" + args.get(1) + "<white>: <green>" + formatMoney(b)));
                 }
                 case "top" -> {
                     List<Map.Entry<UUID, Double>> sorted = new ArrayList<>(bounties.entrySet());
@@ -176,11 +175,11 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                         p.sendMessage(mm.deserialize("<gray>Aktuell sind keine Kopfgelder ausgesetzt."));
                         return true;
                     }
-                    p.sendMessage(mm.deserialize("<gold><bold>Top Kopfgelder:</bold>"));
+                    p.sendMessage(mm.deserialize("<light_purple><bold>Top Kopfgelder:</bold>"));
                     for (int i = 0; i < Math.min(10, sorted.size()); i++) {
                         Map.Entry<UUID, Double> entry = sorted.get(i);
                         String name = Bukkit.getOfflinePlayer(entry.getKey()).getName();
-                        p.sendMessage(mm.deserialize("<gray>#" + (i + 1) + " <white>" + (name != null ? name : "Unbekannt") + " <gray>- <gold>" + formatMoney(entry.getValue())));
+                        p.sendMessage(mm.deserialize("<gray>#" + (i + 1) + " <white>" + (name != null ? name : "Unbekannt") + " <gray>- <light_purple>" + formatMoney(entry.getValue())));
                     }
                 }
                 default -> p.sendMessage(mm.deserialize("<red>Nutze: /bounty <set <Spieler> <Betrag> | check <Spieler> | top>"));
@@ -214,7 +213,7 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
                 saveData();
 
                 Bukkit.broadcast(mm.deserialize(
-                    "<red><bold>[BOUNTY]</bold> <gold>" + killer.getName() + " <white>hat <red>" + victim.getName() +
+                    "<dark_purple><bold>[BOUNTY]</bold> <light_purple>" + killer.getName() + " <white>hat <red>" + victim.getName() +
                     " <white>getoetet und <green>" + formatMoney(bounty) + " <white>Kopfgeld kassiert!"
                 ));
             }
@@ -237,14 +236,14 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         }
 
         if (boardDisabled.contains(p.getUniqueId())) {
-            Objective old = sb.getObjective("hugoboard");
+            Objective old = sb.getObjective("shadowboard");
             if (old != null) old.unregister();
             return;
         }
 
-        Objective obj = sb.getObjective("hugoboard");
+        Objective obj = sb.getObjective("shadowboard");
         if (obj == null) {
-            obj = sb.registerNewObjective("hugoboard", Criteria.DUMMY, mm.deserialize("<gradient:#00d2ff:#3a7bd5><bold>HUGOSMP</bold></gradient>"));
+            obj = sb.registerNewObjective("shadowboard", Criteria.DUMMY, mm.deserialize("<gradient:#9d4edd:#e0aaff><bold>SHADOW SMP</bold></gradient>"));
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
         }
 
@@ -260,12 +259,12 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         double bounty = bounties.getOrDefault(p.getUniqueId(), 0.0);
 
         setLine(obj, "§1", 11);
-        setLine(obj, "§8▪ §7Geld: §a" + formatMoney(money), 10);
+        setLine(obj, "§5▪ §7Geld: §d" + formatMoney(money), 10);
         setLine(obj, "§2", 9);
-        setLine(obj, "§8▪ §7Kills: §c" + kills, 8);
-        setLine(obj, "§8▪ §7Tode: §e" + deaths, 7);
+        setLine(obj, "§5▪ §7Kills: §c" + kills, 8);
+        setLine(obj, "§5▪ §7Tode: §d" + deaths, 7);
         setLine(obj, "§3", 6);
-        setLine(obj, "§8▪ §7Bounty: §6" + formatMoney(bounty), 5);
+        setLine(obj, "§5▪ §7Bounty: §d" + formatMoney(bounty), 5);
         setLine(obj, "§4", 4);
         setLine(obj, "§7/board off", 3);
     }
