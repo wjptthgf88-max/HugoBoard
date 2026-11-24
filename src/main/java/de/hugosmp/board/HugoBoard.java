@@ -33,7 +33,6 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, TabComplet
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final Map<UUID, Double> bounties = new HashMap<>();
     private final Set<UUID> boardDisabled = new HashSet<>();
-    private final Map<String, Long> killCooldowns = new HashMap<>();
     private File dataFile;
 
     @Override
@@ -222,19 +221,6 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, TabComplet
         Player killer = victim.getKiller();
 
         if (killer != null && !killer.equals(victim)) {
-            String pairKey = killer.getUniqueId() + ":" + victim.getUniqueId();
-            long now = System.currentTimeMillis();
-            long lastKill = killCooldowns.getOrDefault(pairKey, 0L);
-
-            if (now - lastKill >= 10 * 60 * 1000L) {
-                killCooldowns.put(pairKey, now);
-                double killReward = 25_000.0;
-                econ.depositPlayer(killer, killReward);
-                killer.sendMessage(mm.deserialize("<green>+ " + formatMoney(killReward) + " <gray>(Spieler-Kill)"));
-            } else {
-                killer.sendMessage(mm.deserialize("<gray>(Kein Kill-Geld: Anti-Farm-Sperre fuer 10 Minuten aktiv)"));
-            }
-
             double bounty = bounties.getOrDefault(victim.getUniqueId(), 0.0);
             if (bounty > 0) {
                 bounties.remove(victim.getUniqueId());
