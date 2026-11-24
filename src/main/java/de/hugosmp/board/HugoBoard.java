@@ -8,6 +8,7 @@ import org.bukkit.Statistic;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -25,16 +26,9 @@ import org.bukkit.scoreboard.Scoreboard;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
-public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
+public class HugoBoard extends JavaPlugin implements CommandExecutor, TabCompleter, Listener {
     private Economy econ;
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final Map<UUID, Double> bounties = new HashMap<>();
@@ -51,7 +45,9 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         }
         loadData();
         getCommand("board").setExecutor(this);
+        getCommand("board").setTabCompleter(this);
         getCommand("bounty").setExecutor(this);
+        getCommand("bounty").setTabCompleter(this);
         getServer().getPluginManager().registerEvents(this, this);
 
         Bukkit.getScheduler().runTaskTimer(this, () -> {
@@ -81,6 +77,39 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         if (amount >= 1_000.0) return new DecimalFormat("#.##").format(amount / 1_000.0) + "K $";
         return new DecimalFormat("#.##").format(amount) + " $";
     }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
+        if (cmd.getName().equalsIgnoreCase("board")) {
+            if (args.length == 1) {
+                return List.of("on", "off").stream()
+                        .filter(s -> s.startsWith(args[0].toLowerCase()))
+                        .toList();
+            }
+            return Collections.emptyList();
+        }
+
+        if (cmd.getName().equalsIgnoreCase("bounty")) {
+            if (args.length == 1) {
+                return List.of("set", "check", "top").stream()
+                        .filter(s -> s.startsWith(args[0].toLowerCase()))
+                        .toList();
+            }
+            if (args.length == 2 && (args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("check"))) {
+                return Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .toList();
+            }
+            if (args.length == 3 && args[0].equalsIgnoreCase("set")) {
+                return List.of("1000", "2500", "5000", "10000", "25000").stream()
+                        .filter(val -> val.startsWith(args[2]))
+                        .toList();
+            }
+        }
+        return Collections.emptyList();
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] rawArgs) {
         if (!(sender instanceof Player p)) return true;
@@ -108,7 +137,6 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
             }
             return true;
         }
-
         if (cmd.getName().equalsIgnoreCase("bounty")) {
             if (args.isEmpty()) {
                 p.sendMessage(mm.deserialize("<red>Nutze: /bounty <set <Spieler> <Betrag> | check <Spieler> | top>"));
@@ -187,6 +215,7 @@ public class HugoBoard extends JavaPlugin implements CommandExecutor, Listener {
         }
         return true;
     }
+
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player victim = e.getEntity();
